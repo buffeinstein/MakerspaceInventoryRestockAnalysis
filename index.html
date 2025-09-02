@@ -128,67 +128,214 @@
       return colorMap;
     }
 
-    function plotRange(startDate, endDate) {
-      const weeksInRange = iterateWeeks(startDate, endDate);
-      const present = weeksInRange
-        .map(meta => ({ meta, rec: weekMap.get(meta.key) }))
-        .filter(x => !!x.rec);
+    // function plotRange(startDate, endDate) {
+    //   const weeksInRange = iterateWeeks(startDate, endDate);
+    //   const present = weeksInRange
+    //     .map(meta => ({ meta, rec: weekMap.get(meta.key) }))
+    //     .filter(x => !!x.rec);
 
-      if (present.length === 0) {
-        Plotly.react("chart", [], {
-          title: "No data in the selected range",
-          xaxis: { title: "ISO Week" },
-          yaxis: { title: "Number of Restocks" }
-        }, PLOT_CONFIG);
-        return;
-      }
+    //   if (present.length === 0) {
+    //     Plotly.react("chart", [], {
+    //       title: "No data in the selected range",
+    //       xaxis: { title: "ISO Week" },
+    //       yaxis: { title: "Number of Restocks" }
+    //     }, PLOT_CONFIG);
+    //     return;
+    //   }
 
-      const allLocations = Array.from(new Set(present.flatMap(x => Object.keys(x.rec.counts)))).sort();
-      const colorMap = buildColorMap(allLocations);
+    //   const allLocations = Array.from(new Set(present.flatMap(x => Object.keys(x.rec.counts)))).sort();
+    //   const colorMap = buildColorMap(allLocations);
 
-      const x = present.map(x => x.meta.label);
-      const totals = present.map(x => Object.values(x.rec.counts).reduce((a,b)=>a+b,0));
-      const avgDelays = present.map(x => x.rec.avg_delay_days);
+    //   const x = present.map(x => x.meta.label);
+    //   const totals = present.map(x => Object.values(x.rec.counts).reduce((a,b)=>a+b,0));
+    //   const avgDelays = present.map(x => x.rec.avg_delay_days);
 
-      const traces = allLocations.map(loc => ({
+    //   const traces = allLocations.map(loc => ({
+    //     type: "bar",
+    //     name: loc,
+    //     x,
+    //     y: present.map(x => x.rec.counts[loc] || 0),
+    //     marker: { color: colorMap[loc] },
+    //     hovertemplate: `Week %{x}<br>Area: ${loc}<br>Count: %{y}<extra></extra>`
+    //   }));
+
+    //   const layout = {
+    //     barmode: "stack",
+    //     title: `Makerspace Restocks — ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+    //     xaxis: { title: "ISO Week", tickangle: -30 },
+    //     yaxis: { title: "Number of Restocks" },
+    //     legend: { title: { text: "Area" } },
+    //     margin: { l: 50, r: 20, t: 60, b: 80 },
+    //     hovermode: "x unified"
+    //   };
+
+    //   Plotly.react("chart", traces, layout, PLOT_CONFIG).then(() => {
+    //     const ann = [];
+    //     for (let i = 0; i < x.length; i++) {
+    //       const total = totals[i];
+    //       if (total > 0) {
+    //         const delay = avgDelays[i];
+    //         const label = (typeof delay === "number") ? `${Math.round(delay)}d` : "–";
+    //         ann.push({
+    //           x: x[i],
+    //           y: total,
+    //           text: label,
+    //           showarrow: false,
+    //           yshift: 12,
+    //           font: { size: 12 }
+    //         });
+    //       }
+    //     }
+    //     Plotly.relayout("chart", { annotations: ann });
+    //   });
+    // }
+
+
+
+
+//     function plotRange(startDate, endDate) {
+//     const weeksInRange = iterateWeeks(startDate, endDate);
+//     const present = weeksInRange
+//       .map(meta => ({ meta, rec: weekMap.get(meta.key) }))
+//       .filter(x => !!x.rec);
+
+//     if (present.length === 0) {
+//       Plotly.react("chart", [], {
+//         title: "No data in the selected range",
+//         xaxis: { title: "ISO Week" },
+//         yaxis: { title: "Number of Restocks" }
+//       }, PLOT_CONFIG);
+//       return;
+//     }
+
+//     const allLocations = Array.from(new Set(present.flatMap(x => Object.keys(x.rec.counts)))).sort();
+//     const colorMap = buildColorMap(allLocations);
+
+//     const x = present.map(x => x.meta.label);
+//     const totals = present.map(x => Object.values(x.rec.counts).reduce((a,b)=>a+b,0));
+//     const avgDelays = present.map(x => x.rec.avg_delay_days);
+
+//     // Build traces with hover hidden for zeros
+//     const traces = allLocations.map(loc => {
+//       const counts = present.map(x => x.rec.counts[loc] || 0);
+//       const hovertext = counts.map((c, i) =>
+//         c > 0 ? `Week ${x[i]}<br>Area: ${loc}<br>Count: ${c}` : null
+//       );
+//       return {
+//         type: "bar",
+//         name: loc,
+//         x,
+//         y: counts,
+//         marker: { color: colorMap[loc] },
+//         hovertext: hovertext,
+//         hoverinfo: "text" // only show our custom text; null entries show no tooltip
+//       };
+//     });
+
+//     const layout = {
+//       barmode: "stack",
+//       title: `Makerspace Restocks — ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+//       xaxis: { title: "ISO Week", tickangle: -30 },
+//       yaxis: { title: "Number of Restocks" },
+//       legend: { title: { text: "Area" } },
+//       margin: { l: 50, r: 20, t: 60, b: 80 },
+//       hovermode: "x unified"
+//     };
+
+//     Plotly.react("chart", traces, layout, PLOT_CONFIG).then(() => {
+//       const ann = [];
+//       for (let i = 0; i < x.length; i++) {
+//         const total = totals[i];
+//         if (total > 0) {
+//           const delay = avgDelays[i];
+//           const label = (typeof delay === "number") ? `${Math.round(delay)}d` : "–";
+//           ann.push({
+//             x: x[i],
+//             y: total,
+//             text: label,
+//             showarrow: false,
+//             yshift: 12,
+//             font: { size: 12 }
+//           });
+//         }
+//       }
+//       Plotly.relayout("chart", { annotations: ann });
+//     });
+//   }
+
+function plotRange(startDate, endDate) {
+    const weeksInRange = iterateWeeks(startDate, endDate);
+    const present = weeksInRange
+      .map(meta => ({ meta, rec: weekMap.get(meta.key) }))
+      .filter(x => !!x.rec);
+
+    if (present.length === 0) {
+      Plotly.react("chart", [], {
+        title: "No data in the selected range",
+        xaxis: { title: "ISO Week" },
+        yaxis: { title: "Number of Restocks" }
+      }, PLOT_CONFIG);
+      return;
+    }
+
+    const allLocations = Array.from(new Set(present.flatMap(x => Object.keys(x.rec.counts)))).sort();
+    const colorMap = buildColorMap(allLocations);
+
+    const x = present.map(x => x.meta.label);
+    const totals = present.map(x => Object.values(x.rec.counts).reduce((a,b)=>a+b,0));
+    const avgDelays = present.map(x => x.rec.avg_delay_days);
+
+    // Build traces with hover hidden for zeros
+    const traces = allLocations.map(loc => {
+      const counts = present.map(x => x.rec.counts[loc] || 0);
+      // For zero counts → set hoverinfo to "skip"
+      const customHover = counts.map(c => c > 0 ? `Area: ${loc}<br>Count: ${c}` : null);
+
+      return {
         type: "bar",
         name: loc,
         x,
-        y: present.map(x => x.rec.counts[loc] || 0),
+        y: counts,
         marker: { color: colorMap[loc] },
-        hovertemplate: `Week %{x}<br>Area: ${loc}<br>Count: %{y}<extra></extra>`
-      }));
-
-      const layout = {
-        barmode: "stack",
-        title: `Makerspace Restocks — ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
-        xaxis: { title: "ISO Week", tickangle: -30 },
-        yaxis: { title: "Number of Restocks" },
-        legend: { title: { text: "Area" } },
-        margin: { l: 50, r: 20, t: 60, b: 80 },
-        hovermode: "x unified"
+        hovertext: customHover,
+        hoverinfo: "text"  // only show our custom text; null = no hover at all
       };
+    });
 
-      Plotly.react("chart", traces, layout, PLOT_CONFIG).then(() => {
-        const ann = [];
-        for (let i = 0; i < x.length; i++) {
-          const total = totals[i];
-          if (total > 0) {
-            const delay = avgDelays[i];
-            const label = (typeof delay === "number") ? `${Math.round(delay)}d` : "–";
-            ann.push({
-              x: x[i],
-              y: total,
-              text: label,
-              showarrow: false,
-              yshift: 12,
-              font: { size: 12 }
-            });
-          }
+    const layout = {
+      barmode: "stack",
+      title: `Makerspace Restocks — ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+      xaxis: { title: "ISO Week", tickangle: -30 },
+      yaxis: { title: "Number of Restocks" },
+      legend: { title: { text: "Area" } },
+      margin: { l: 50, r: 20, t: 60, b: 80 },
+      hovermode: "x unified"
+    };
+
+    Plotly.react("chart", traces, layout, PLOT_CONFIG).then(() => {
+      const ann = [];
+      for (let i = 0; i < x.length; i++) {
+        const total = totals[i];
+        if (total > 0) {
+          const delay = avgDelays[i];
+          const label = (typeof delay === "number") ? `${Math.round(delay)}d` : "–";
+          ann.push({
+            x: x[i],
+            y: total,
+            text: label,
+            showarrow: false,
+            yshift: 12,
+            font: { size: 12 }
+          });
         }
-        Plotly.relayout("chart", { annotations: ann });
-      });
-    }
+      }
+      Plotly.relayout("chart", { annotations: ann });
+    });
+  }
+
+
+
+
 
     // Wire up UI
     document.getElementById("plotBtn").addEventListener("click", () => {
