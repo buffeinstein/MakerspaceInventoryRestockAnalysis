@@ -14,7 +14,7 @@ http://localhost:8000/
 
 on any browser. 
 
-To understand how the rest of the code works, see these notes: 
+To understand how this was made, see these notes: 
 
 https://docs.google.com/document/d/1MzZo6arNCKGAJ5ouamQ6TKpnmd3gKF7aKIf7Cnv6fzI/edit?usp=sharing
 
