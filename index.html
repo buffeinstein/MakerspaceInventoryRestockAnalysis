@@ -37,7 +37,28 @@
   <div id="legend" class="note">Tip: dates are mapped to ISO weeks (Mon–Sun). Weeks with no requests simply don’t appear.</div>
 
   <script>
-    // ---- Configurable colors: set specific brand colors per area if you like ----
+    // === Modebar config: keep PNG, zoomIn/zoomOut, pan, autoscale; remove zoom (box), reset axes, box select, lasso ===
+    const PLOT_CONFIG = {
+      displaylogo: false,
+      responsive: true,
+      modeBarButtonsToRemove: [
+        'zoom2d',       // box-zoom (removed)
+        'resetScale2d', // reset axes (removed)
+        'select2d',     // box select (removed)
+        'lasso2d'       // lasso select (removed)
+      ],
+      // The following stay available by *not* removing them:
+      // 'toImage' (Download PNG), 'zoomIn2d', 'zoomOut2d', 'pan2d', 'autoScale2d'
+      toImageButtonOptions: {
+        format: 'png',
+        filename: 'makerspace-restocks',
+        height: 600,
+        width: 1100,
+        scale: 2
+      }
+    };
+
+    // ---- Configurable colors per area (optional) ----
     const USER_COLOR_OVERRIDES = {
       // "Cabinet 3": "#1f77b4",
       // "Fabric": "#ff7f0e",
@@ -55,20 +76,17 @@
     let weeksData = null;
     let weekMap = null; // key: `${iso_year}-W${iso_week}` → record
 
-    // Utility: ISO week-year and week number
+    // ISO utils
     function isoWeekYear(date) {
       const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      // Thursday in current week decides the year.
       d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
       return d.getUTCFullYear();
     }
     function isoWeek(date) {
       const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      // Thursday in current week decides the week number.
       d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
       const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-      return weekNo;
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
     function mondayOfWeek(date) {
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -78,9 +96,7 @@
       d.setHours(0,0,0,0);
       return d;
     }
-
     function iterateWeeks(startDate, endDate) {
-      // Normalize to Monday of start week; step +7 days until we pass endDate
       const weeks = [];
       let cur = mondayOfWeek(startDate);
       const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
@@ -114,7 +130,6 @@
 
     function plotRange(startDate, endDate) {
       const weeksInRange = iterateWeeks(startDate, endDate);
-      // Gather the records we actually have for those weeks
       const present = weeksInRange
         .map(meta => ({ meta, rec: weekMap.get(meta.key) }))
         .filter(x => !!x.rec);
@@ -124,20 +139,17 @@
           title: "No data in the selected range",
           xaxis: { title: "ISO Week" },
           yaxis: { title: "Number of Restocks" }
-        });
+        }, PLOT_CONFIG);
         return;
       }
 
-      // Collect all locations present in this slice
       const allLocations = Array.from(new Set(present.flatMap(x => Object.keys(x.rec.counts)))).sort();
       const colorMap = buildColorMap(allLocations);
 
-      // X axis: use "Wn (year)" to be unambiguous across years
       const x = present.map(x => x.meta.label);
       const totals = present.map(x => Object.values(x.rec.counts).reduce((a,b)=>a+b,0));
       const avgDelays = present.map(x => x.rec.avg_delay_days);
 
-      // Build stacked bars per location
       const traces = allLocations.map(loc => ({
         type: "bar",
         name: loc,
@@ -157,8 +169,7 @@
         hovermode: "x unified"
       };
 
-      Plotly.react("chart", traces, layout).then(() => {
-        // Add annotations (avg delay) above each bar
+      Plotly.react("chart", traces, layout, PLOT_CONFIG).then(() => {
         const ann = [];
         for (let i = 0; i < x.length; i++) {
           const total = totals[i];
@@ -194,7 +205,6 @@
     (async function init() {
       try {
         await loadData();
-        // Optional: pick a sensible default (e.g., last 10 weeks)
         const today = new Date();
         const defaultEnd = today;
         const defaultStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 70);
